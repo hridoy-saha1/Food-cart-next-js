@@ -1,7 +1,11 @@
-'use client';
+"use client";
+
 import { useState } from "react";
+import { useSession, signIn } from "next-auth/react";
 
 export default function AddProductPage() {
+  const { data: session, status } = useSession();
+
   const [form, setForm] = useState({
     title: "",
     cuisine: "",
@@ -9,15 +13,28 @@ export default function AddProductPage() {
     time: "",
     description: "",
   });
-  const [status, setStatus] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
 
+  // 🔄 Loading state
+  if (status === "loading") {
+    return <p className="text-center mt-20">Loading...</p>;
+  }
+
+  // 🚨 If not logged in → redirect to login
+  if (!session) {
+    signIn("google", { callbackUrl: "/dashboard/add-product" });
+    return null;
+  }
+
+  // ✅ Handle input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus("Submitting...");
+    setStatusMsg("Submitting...");
 
     try {
       const res = await fetch("/api/products", {
@@ -27,23 +44,23 @@ export default function AddProductPage() {
       });
 
       if (res.ok) {
-        setStatus("Product added successfully!");
+        setStatusMsg("Product added successfully!");
         setForm({ title: "", cuisine: "", photo: "", time: "", description: "" });
       } else {
         const data = await res.json();
-        setStatus(`Error: ${data.message}`);
+        setStatusMsg(`Error: ${data.message}`);
       }
     } catch (error) {
-      setStatus("Error submitting product");
+      setStatusMsg("Error submitting product");
       console.error(error);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center  bg-amber-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-amber-50 p-6">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg bg-black p-8 rounded shadow-md"
+        className="w-full max-w-lg  text-white p-8 rounded shadow-md"
       >
         <h1 className="text-2xl font-bold mb-6">Add New Product</h1>
 
@@ -53,7 +70,7 @@ export default function AddProductPage() {
           placeholder="Title"
           value={form.title}
           onChange={handleChange}
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black"
           required
         />
 
@@ -63,7 +80,7 @@ export default function AddProductPage() {
           placeholder="Cuisine"
           value={form.cuisine}
           onChange={handleChange}
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black"
           required
         />
 
@@ -73,7 +90,7 @@ export default function AddProductPage() {
           placeholder="Photo URL"
           value={form.photo}
           onChange={handleChange}
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black"
         />
 
         <input
@@ -82,7 +99,7 @@ export default function AddProductPage() {
           placeholder="Price / Time"
           value={form.time}
           onChange={handleChange}
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black"
         />
 
         <textarea
@@ -90,7 +107,7 @@ export default function AddProductPage() {
           placeholder="Description"
           value={form.description}
           onChange={handleChange}
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black"
         />
 
         <button
@@ -100,7 +117,7 @@ export default function AddProductPage() {
           Add Product
         </button>
 
-        {status && <p className="mt-4 text-center">{status}</p>}
+        {statusMsg && <p className="mt-4 text-center">{statusMsg}</p>}
       </form>
     </div>
   );
